@@ -26,12 +26,12 @@
         const Timer = require("easytimer.js").Timer;
         const timer = new Timer();
 
-        var AgentCode;
-        var agentStatusID;
-        var callTotal = 0;
-        var agentData;
+        let AgentCode;
+        let agentStatusID;
+        let callTotal = 0;
+        let agentData;
 
-        var CallID;
+        let CallID;
 
         let statusLabel;
 
@@ -58,13 +58,20 @@
             AgentStatusCode: '5', // -- Hard Code
             IsLogin: '',
         }
+        //let APIServer = "https://192.168.56.1:8443/api/v1";
+        //let WebSecketServer = "ws://192.168.56.1:3071";
 
-        var ConcurrentCall = [];
-        var connectSocket = false;
-        var IsLogin = 0;
-        var wsChecks = "false";
+        //--Staging Server------------------------------
+        //let APIServer = "https://lab-api.se-rmutl.net/engse207/api/v1";
+        //let WebSecketServer = "ws://lab-ws.se-rmutl.net/engse207";
 
-        var c;
+
+        let ConcurrentCall = [];
+        let connectSocket = false;
+        let IsLogin = 0;
+        let wsChecks = "false";
+
+        let c;
         let ws;
 
         let checked;
@@ -82,18 +89,13 @@
                 requireInteraction: true
             }
             const myNotification = new window.Notification(notification.title, notification);
-
             myNotification.onclick = (e) => console.log("User clicked the pop-up");
-
             myNotification.onclose = (e) => console.log("User closed the pop-up");
-
             myNotification.onerror = (err) => console.error(err);
         }
 
-
+        
         function statusNotify(Message) {
-
-
             const notification = {
                 title: 'Agent Status Changed',
                 subtitle: 'Subtitle of the Notification',
@@ -155,6 +157,10 @@
             $("#buttonCall").hide();
             $("#buttonDisConnect").hide();
             $("#buttonConnect").show();
+
+            $("#currentStatus").hide();
+            $("#currentStatusImg").hide();
+
             $("#nodata").hide();
             //$("#errMessage").show();
             $("#agent").focus();
@@ -233,6 +239,20 @@
                                 $("reports").show();
                                 $("#buttonDisConnect").show();
                                 $("#buttonCall").show();
+
+                                //$('#currentStatus').val(response.data.AgentStatus).change();
+
+                                $("#currentStatus").prop('selectedIndex', response.data.AgentStatus - 1);
+
+                                $("#currentStatus").show();
+                                $("#currentStatusImg").show();
+
+                                $("#NotifyBtn").show();
+
+                                $("#destAgent").show();
+                                $("#agentMsg").show();
+                                $("#SendMsgBtn").show();
+
                                 IsLogin = 1;
 
                                 //-------- Web Socket ----------
@@ -429,15 +449,15 @@
         }
 
         function setLoginTime() {
-            var d = new Date();
+            let d = new Date();
 
-            var month = d.getMonth() + 1;
-            var day = d.getDate();
-            var hour = d.getHours();
-            var minute = d.getMinutes();
-            var sec = d.getSeconds();
+            let month = d.getMonth() + 1;
+            let day = d.getDate();
+            let hour = d.getHours();
+            let minute = d.getMinutes();
+            let sec = d.getSeconds();
 
-            var output =
+            let output =
                 d.getFullYear() +
                 "-" +
                 (month < 10 ? "0" : "") +
@@ -485,6 +505,10 @@
                 .append("Disconnected");
 
             $("#buttonDisConnect").hide();
+
+            $("#currentStatus").hide();
+            $("#currentStatusImg").hide();
+
             $("#buttonConnect").show();
             $("#icon").attr("src", "./assets/icon/disconnect.png");
             $("#connectTime").empty().append("Information");
@@ -573,7 +597,7 @@
 
 
                     ws.onmessage = function (message) {
-                        var response = message.data;
+                        let response = message.data;
 
                         console.log("message received: " + message.data);
                         // document.getElementById('messageFromServer').innerHTML = response;
@@ -608,7 +632,7 @@
                                 .empty()
                                 .append("Connected");
 
-                            var response = JSON.parse(message.data);
+                            let response = JSON.parse(message.data);
                             // document.getElementById('log').innerHTML = response['MessageType'];
                             if (response.MessageType == 2) {
                                 openApplication();
@@ -629,7 +653,7 @@
                                             openApplication();
                                         }
                                     } else {
-                                        for (var i = 0; i < ConcurrentCall.length; i++) {
+                                        for (let i = 0; i < ConcurrentCall.length; i++) {
                                             if (
                                                 ConcurrentCall[i].ServiceCode ==
                                                 response["ServiceCode"] &&
@@ -657,7 +681,7 @@
                                 }
 
                                 if (ConcurrentCall.length > 0) {
-                                    for (var i = 0; i < ConcurrentCall.length; i++) {
+                                    for (let i = 0; i < ConcurrentCall.length; i++) {
                                         if (parseInt(ConcurrentCall[i]["Call"]) > 0) {
                                             $("#reports").append(
                                                 '<div class="col-6 mb-3">' +
@@ -940,6 +964,8 @@
                 }
             }
         }
+        //-------- Web Socket ----------
+
         //-------------------------------Start Added ---
         function GetSelectedTextValue(currentStatus) {
             let selectedText = currentStatus.options[currentStatus.selectedIndex].innerHTML;
@@ -968,6 +994,7 @@
 
         }
         //-------------------------------End Added --
+        //-------------------------------End Added ---
 
     </script>
 
@@ -993,6 +1020,53 @@
                                 <select id="statusDropdown" onchange="GetSelectedTextValue(this)"
                                     class="form-select form-select-sm">
                                     <option value="1">Available</option>
+            <div class="col-12">
+                <table class="table table-sm fs-6">
+                    <tr>
+                        <div class="pt-2 pl-2 pr-2">
+                    <tr>
+                        <td class="text-white">
+                            <span class="text-white" id="connectTime">Information</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-white">
+                            <span class="text-blue badge bg-danger" id="ConnectionStatus">Disconnected</span>
+                            <span id="statusLabel" class="badge bg-dark">N/A</span>
+                        </td>
+                    </tr>
+                    <tr>
+                    </tr>
+            </div>
+            </tr>
+            </table>
+        </div>
+
+        <div class="col-12">
+            <table class="table table-sm fs-6">
+                <tr>
+                    <div class="row">
+                        <div class="col-sm-12 text-center ">
+                            <button id="buttonCall" class="btn btn-primary btn-sm shadow btn-block mt-2" disable
+                                onclick="CallOnescreen(1,'0000')">
+                                Pop-up Chrome
+                            </button>
+
+                            <button id="NotifyBtn" class="btn btn-warning btn-sm btn-block mt-2" onclick="notify()">
+                                Notification
+                            </button>
+
+                            <button id="buttonDisConnect" class="btn btn-danger btn-sm shadow btn-block mt-2"
+                                onclick="logoutFromAPI()">
+                                Disconnect
+                            </button>
+
+                            <div class="input-group  mt-2">
+                                <img id="currentStatusImg" src='./assets/Help_And_Support.png' width="30px"
+                                    height="30px" />
+                                <select id="currentStatus" onchange="GetSelectedTextValue(this)">
+                                    <option value="1">Avalible</option>
+>>>>>>> ad7f4c871adf8b7e9f3f59df2795636de0e78305
                                     <option value="2">Active</option>
                                     <option value="3">Wrap</option>
                                     <option value="4">Not Ready</option>
