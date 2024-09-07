@@ -167,3 +167,21 @@ body {
 .maximized #max-button {
     display: none;
 }
+
+.text-white{
+    font-size: 50px;
+}
+
+.status ,#status ,#statusLabel ,#ConnectionStatus{
+    font-size: 20px;
+}
+.fa-user{
+    font-size: 30px;
+    margin-right: 10px;
+}
+tr .head-dd{
+    margin-right: 50px;
+}
+tr .drop-down{
+    width: 40px;
+}

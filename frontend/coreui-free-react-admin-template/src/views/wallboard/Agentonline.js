@@ -34,7 +34,6 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
 
                                                 return msToTime(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode)
                                             }
-
                                         }
                                         )
                                         :
@@ -108,7 +107,6 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
                                             if (parseInt(agent.AgentStatus) === 3 && agent.Queue === ServiceCode) {
                                                 return msToTime(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode)
                                             }
-
                                         }
                                         )
                                 }
@@ -137,9 +135,7 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
                                             if (parseInt(agent.AgentStatus) === 4) {
                                                 //return msToTimeFor4(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode, agent.AgentStatusCode)
                                                 return msToTimeFor4(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode, parseInt(agent.AgentStatusCode))
-
                                             }
-
                                         }
                                         )
                                         :
@@ -148,7 +144,6 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
                                             if (parseInt(agent.AgentStatus) === 4 && agent.Queue && agent.Queue === ServiceCode) {
                                                 return msToTimeFor4(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode, agent.AgentStatusCode)
                                             }
-
                                         }
                                         )
                                 }
@@ -159,9 +154,6 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
                 </Row>
             </Container>
         </div>
-
     )
 }
-
-
 export default Agentonline

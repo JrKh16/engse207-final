@@ -38,7 +38,6 @@ const WallboardHeader = ({ title, serviceChange, ServiceCode }) => {
                             {
                                 serviceCode.map(item => <MenuItem value={item} key={item} >{item}</MenuItem>)
                             }
-
                         </Select>
                     </FormControl>
                 </div>
@@ -46,5 +45,4 @@ const WallboardHeader = ({ title, serviceChange, ServiceCode }) => {
         </Header>
     )
 }
-
 export default WallboardHeader

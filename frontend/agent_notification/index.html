@@ -12,11 +12,15 @@
 
     <script language="JavaScript">
 
-        const path = require('path');
         const {
             ipcRenderer,
             remote
         } = require("electron");
+
+        const electron = require('electron');
+        const path = require('path')
+
+
 
         const $ = require("jquery");
         const Timer = require("easytimer.js").Timer;
@@ -29,17 +33,31 @@
 
         var CallID;
 
+        let statusLabel;
+
         //--Dev Server------------------------------
-        //var APIServer = "https://192.168.56.1:8443/api/v1";
-        //var WebSecketServer = "ws://192.168.56.1:3071";
+        //    var APIServer = "https://192.168.56.1:8600/api/v1";
+        //     var WebSecketServer = "ws://192.168.56.1:8601";
 
         //--Staging Server------------------------------
-        //var APIServer = "https://lab-api.se-rmutl.net/engse207/api/v1";
-        //var WebSecketServer = "ws://lab-ws.se-rmutl.net/engse207";
+        var APIServer = "https://10.21.43.203:8600/api/v1";
+        var WebSecketServer = "ws://10.21.43.203:8601";
 
-        //--Production Server------------------------------
-        var APIServer = "https://10.21.43.203:8000/engse207/api/v1";
-        var WebSecketServer = "ws://10.21.43.203:8001";
+        let ParseServerAPI = "https://10.21.43.203:8605/api";
+        let ParseMasterKey = "wallboardapi";
+        let ParseClientKey = "wallboardapi";
+        let ParseJavascriptKey = "wallboardapi";
+        let ParseAppId = "wallboardapi";
+        let TeamNo = '6'; // <-- Enter you Team No. here.
+
+        let currentAgent = {
+            AgentCode: '',
+            AgentName: '',
+            Team: TeamNo,
+            AgentStatus: '',
+            AgentStatusCode: '5', // -- Hard Code
+            IsLogin: '',
+        }
 
         var ConcurrentCall = [];
         var connectSocket = false;
@@ -66,6 +84,7 @@
             const myNotification = new window.Notification(notification.title, notification);
 
             myNotification.onclick = (e) => console.log("User clicked the pop-up");
+
             myNotification.onclose = (e) => console.log("User closed the pop-up");
 
             myNotification.onerror = (err) => console.error(err);
@@ -93,33 +112,28 @@
         }
 
         function messageNotify(ReceiveMessage) {
-            /*
-                        const notification = {
-                            title: 'From: '+ReceiveMessage.FromAgentCode,
-                            //subtitle: 'Subtitle of the Notification',
-                            //body: '** '+ statusLabel+ ' **',
-                            body: 'Message: '+ReceiveMessage.Message +'\n'+'['+ReceiveMessage.DateTime+']',
-                            silent: false,
-                            requireInteraction: true,
-                            icon: path.join(__dirname, './assets/impatient.png')
-                        }
-                        */
+            // Create desktop notification
             const notification = {
                 title: ReceiveMessage.DateTime + '\n' + 'From: ' + ReceiveMessage.FromAgentCode,
-                //subtitle: 'Subtitle of the Notification',
-                //body: '** '+ statusLabel+ ' **',
-                body: ' ---------------------- \n' + ReceiveMessage.Message,
+                body: ' ' + ReceiveMessage.Message,
                 silent: false,
                 requireInteraction: true,
                 icon: path.join(__dirname, './assets/impatient.png')
-            }
-
+            };
             const myNotification = new window.Notification(notification.title, notification);
-
             myNotification.onclick = (e) => console.log("User clicked the pop-up");
             myNotification.onclose = (e) => console.log("User closed the pop-up");
-
             myNotification.onerror = (err) => console.error(err);
+
+            // Display message in the app
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message-item mb-2';
+            messageElement.innerHTML = `
+        <strong>${ReceiveMessage.FromAgentCode}</strong> (${ReceiveMessage.DateTime})<br>
+        ${ReceiveMessage.Message}
+    `;
+            // document.getElementById('messageList').appendChild(messageElement);
+            // document.getElementById('messageList').scrollTop = document.getElementById('messageList').scrollHeight;
         }
 
         /*
@@ -138,24 +152,13 @@
         $(function () {
             console.log("ready!");
 
-
             $("#buttonCall").hide();
             $("#buttonDisConnect").hide();
             $("#buttonConnect").show();
-
-            $("#currentStatus").hide();
-
             $("#nodata").hide();
             //$("#errMessage").show();
             $("#agent").focus();
             //alert(localStorage.getItem("switch_104_02"));
-
-            $("#NotifyBtn").hide();
-            $("#destAgent").hide();
-            $("#agentMsg").hide();
-            $("#SendMsgBtn").hide();
-
-
 
             //--- Running Chrome x64 only -----   
             if (localStorage.getItem("agent") != "") {
@@ -186,51 +189,6 @@
 
         }
 
-        function sendMessage() {
-            if ($("#destAgent").val() == "") {
-
-                alert("Please enter destination agent ");
-                $("#destAgent").focus();
-
-            }
-            else
-                if ($("#agentMsg").val() == "") {
-
-                    alert("Please enter Message ");
-                    setTimeout(function () { $("#agentMsg").focus(); }, 0);
-
-                }
-                else {
-
-                    const data = {
-                        FromAgentCode: $("#agent").val(),
-                        ToAgentCode: $("#destAgent").val(),
-                        Message: $("#agentMsg").val(),
-                    };
-
-                    $.ajax({
-                        type: 'POST',
-                        url: APIServer + "/postSendMessage",
-                        headers: {
-                            Authorization: 'Bearer 1aaZ!ARgAQGuQzp00D5D000000.mOv2jmhXkfIsjgywpCIh7.HZpc6vED1LCbc90DTaVDJwdNqbTW5r4uZicv8AFfkOE1ialqnR8UN5.wnAgh090h'
-                        },
-                        data: JSON.stringify(data),
-                        contentType: 'application/json',
-                    })
-                        .done((data) => {
-                            console.log({ data });
-                        })
-                        .fail((err) => {
-                            console.error(err);
-                        })
-                        .always(() => {
-                            console.log('always called');
-                        });
-
-
-                }
-
-        }
 
         function checkInput(status) {
             if ($("#agent").val() == "") {
@@ -257,6 +215,14 @@
                         console.log('response.error:' + response.error);
                         if (response.error == false) {
                             if ((response.data.IsLogin == 1) && (response.data.AgentStatus != 9)) {
+
+                                //-------------------------------Start Added ---
+                                currentAgent.AgentCode = response.data.agent_code;
+                                currentAgent.AgentName = response.data.AgentName;
+                                currentAgent.IsLogin = response.data.IsLogin;
+                                currentAgent.AgentStatus = response.data.AgentStatus;
+                                //-------------------------------End Added ---
+
                                 wsChecks = "true";
                                 console.log("new: " + wsChecks);
                                 //$("#errMessage").hide();
@@ -267,19 +233,6 @@
                                 $("reports").show();
                                 $("#buttonDisConnect").show();
                                 $("#buttonCall").show();
-
-                                //$('#currentStatus').val(response.data.AgentStatus).change();
-                                
-                                $("#currentStatus").prop('selectedIndex',response.data.AgentStatus-1);
-
-                                $("#currentStatus").show();
-
-                                $("#NotifyBtn").show();
-
-                                $("#destAgent").show();
-                                $("#agentMsg").show();
-                                $("#SendMsgBtn").show();
-
                                 IsLogin = 1;
 
                                 //-------- Web Socket ----------
@@ -328,7 +281,7 @@
         }
 
         function firstLogin(d) {
-            // connectSocket = true;
+
 
             setLoginTime();
 
@@ -337,23 +290,66 @@
                 .addClass("badge bg-success")
                 .empty()
                 .append("Connected");
-
-            // $('#statusLabel').empty().removeClass().addClass('badge bg-success').append('Available');
-
+            $("#ConnectionStatus").empty().removeClass().addClass('badge bg-success').append("Connected");
             counterTimer();
 
             console.log("d.AgentStatus: " + d.AgentStatus);
 
             statusDisplay(d.AgentStatus);
-
+            statusDisplay(d.AgentStatus);
+            // Load saved status if available
+            let savedStatus = localStorage.getItem("agentStatus");
+            if (savedStatus) {
+                statusDisplay(savedStatus);
+            }
             ipcRenderer.on("getcallid", (e, call_id) => {
-                console.log("Call id:", call_id);
-                CallID = call_id;
-                //this.isConnected = true;
-            });
 
+                console.log("Call id:", call_id);
+
+                CallID = call_id;
+            });
         }
 
+
+        // drop down update
+        function updateStatus() {
+            var newStatus = document.getElementById("statusDropdown").value;
+            console.log("New status selected:", newStatus);
+            postAgentStatus(newStatus);
+        }
+        function postAgentStatus(status) {
+            const agentData = {
+                AgentCode: AgentCode,
+                AgentName: AgentName, // You might want to store the agent name separately
+                IsLogin: 1, // Assuming the agent is logged in
+                AgentStatus: status
+            };
+
+            fetch(APIServer + '/postOnlineAgentStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer 1aaZ!ARgAQGuQzp00D5D000000.mOv2jmhXkfIsjgywpCIh7.HZpc6vED1LCbc90DTaVDJwdNqbTW5r4uZicv8AFfkOE1ialqnR8UN5.wnAgh090h'
+                },
+                body: JSON.stringify(agentData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        console.log('Status updated successfully');
+                        statusDisplay(status);
+                    } else {
+                        console.error('Failed to update status:', data.message);
+                        alert('Failed to update status: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the status');
+                });
+        }
+
+        // status display set status 
         function statusDisplay(status) {
             let statusLabel;
             switch (status) {
@@ -409,7 +405,10 @@
                         .append(statusLabel);
                     break;
             }
+            document.getElementById("statusDropdown").value = status;
         }
+
+
 
         function counterTimer() {
             timer.stop();
@@ -471,11 +470,6 @@
             $("#nodata").hide();
             $("#basicUsage").hide();
             // ws = new WebSocket("ws://" + WebSecketServer + "/?agentcode=" + AgentCode);
-
-            $("#NotifyBtn").hide();
-            $("#destAgent").hide();
-            $("#agentMsg").hide();
-            $("#SendMsgBtn").hide();
 
             //-------- Web Socket ----------
             ws.close();
@@ -735,36 +729,30 @@
                             if (response.MessageType == 5) {
 
                                 console.log("response.MessageType == 5");
-                                console.log("response.FromAgentCode = " + response.FromAgentCode);
-                                console.log("response.ToAgentCode = " + response.ToAgentCode);
-                                console.log("response.Message = " + response.Message);
-
+                                console.log("response.IsLogin = " + response.IsLogin);
                                 messageNotify(response);
 
 
                                 /*
-                                if (response.IsLogin == 0) {
-                                    logoutFromAPI();
-                                } else {
-                                    if (IsLogin == 0) {
-                                        IsLogin = 1;
-                                        setLoginTime();
-                                    }
+                                                                if (response.IsLogin == 0) {
+                                                                    logoutFromAPI();
+                                                                } else {
+                                                                    if (IsLogin == 0) {
+                                                                        IsLogin = 1;
+                                                                        setLoginTime();
+                                                                    }
                                 
-                                    if (response.AgentStatus != agentStatusID) {
-                                        counterTimer();
-                                        agentStatusID = response.AgentStatus;
-                                    }
-                                    console.log("response.MessageType == 4: " + response.AgentStatus);
-                                    statusDisplay(response.AgentStatus);
-                                }
+                                                                    if (response.AgentStatus != agentStatusID) {
+                                                                        counterTimer();
+                                                                        agentStatusID = response.AgentStatus;
+                                                                    }
+                                                                    console.log("response.MessageType == 4: " + response.AgentStatus);
+                                                                    statusDisplay(response.AgentStatus);
+                                                                }
                                 */
 
                             }
-
-                            /*
                             if (response.MessageType == 10) {
-
                                 console.log("response.MessageType == 10");
                                 //console.log("response.IsLogin = " + response.IsLogin);
                                 console.log("response.operationType = " + response.operationType);
@@ -781,9 +769,7 @@
                                         CallOperationAPI(response.operationType, response.phoneNumber);
                                     }
                                 }
-
                             }
-                            */
 
                         }
                     };
@@ -814,21 +800,176 @@
                         ws.close();
                     };
 
+
+
+                    function checkAgentStatus(agentCode, callback) {
+                        $.ajax({
+                            url: APIServer + "/getOnlineAgentByAgentCode?agentcode=" + agentCode,
+                            headers: {
+                                'Authorization': 'Bearer 1aaZ!ARgAQGuQzp00D5D000000.mOv2jmhXkfIsjgywpCIh7.HZpc6vED1LCbc90DTaVDJwdNqbTW5r4uZicv8AFfkOE1ialqnR8UN5.wnAgh090h'
+                            },
+                            timeout: 15000,
+                            success: function (response) {
+                                if (response.error == false && response.data.IsLogin == 1) {
+                                    callback(true, response.data.AgentStatus);
+                                } else {
+                                    callback(false, null);
+                                }
+                            },
+                            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                console.error('Error checking agent status:', errorThrown);
+                                callback(false, null);
+                            }
+                        });
+                    }
+
+
+                    function displayAgentStatus() {
+                        var agentCode = $("#checkAgentCode").val();
+                        if (!agentCode) {
+                            alert("Please enter an agent code to check.");
+                            return;
+                        }
+                        checkAgentStatus(agentCode, function (isLoggedIn, status) {
+                            if (isLoggedIn) {
+                                var statusText = getStatusText(status);
+                                $("#agentStatusDisplay").text(agentCode + " is logged in. Status: " + statusText);
+                            } else {
+                                $("#agentStatusDisplay").text(agentCode + " is not logged in.");
+                            }
+                        });
+                    }
+
+
+                    function postSendMessage() {
+                        const toAgentCode = document.getElementById('toAgentCode').value;
+                        const message = document.getElementById('messageInput').value;
+
+                        if (!toAgentCode || !message) {
+                            alert('Please enter both the agent code and the message.');
+                            return;
+                        }
+
+                        const messageData = {
+                            FromAgentCode: AgentCode,
+                            ToAgentCode: toAgentCode,
+                            Message: message
+                        };
+
+                        console.log("API URL:", APIServer + '/postSendMessage');
+                        console.log("Request Data:", messageData);
+
+                        fetch(APIServer + '/postSendMessage', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer 1aaZ!ARgAQGuQzp00D5D000000.mOv2jmhXkfIsjgywpCIh7.HZpc6vED1LCbc90DTaVDJwdNqbTW5r4uZicv8AFfkOE1ialqnR8UN5.wnAgh090h'
+                            },
+                            body: JSON.stringify(messageData)
+                        })
+                            .then(response => {
+                                console.log("Response status:", response.status);
+                                console.log("Response headers:", response.headers);
+
+                                // Check if the response is JSON
+                                const contentType = response.headers.get("content-type");
+                                if (contentType && contentType.includes("application/json")) {
+                                    return response.json().then(data => ({ isJson: true, data: data }));
+                                } else {
+                                    // If not JSON, read as text
+                                    return response.text().then(text => ({ isJson: false, data: text }));
+                                }
+                            })
+                            .then(result => {
+                                console.log("Response data:", result);
+                                if (result.isJson) {
+                                    if (!result.data.error) {
+                                        alert('Message sent successfully.');
+                                        document.getElementById('toAgentCode').value = '';
+                                        document.getElementById('messageInput').value = '';
+                                    } else {
+                                        alert('Failed to send message: ' + result.data.message);
+                                    }
+                                } else {
+                                    // Handle non-JSON response
+                                    if (result.data.includes("Agent not found")) {
+                                        alert('Error: The agent you are trying to send a message to does not exist. Please check the agent code and try again.');
+                                    } else {
+                                        alert('An error occurred: ' + result.data);
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('An error occurred while sending the message: ' + error.message);
+                            });
+                    }
+
+                    // Ensure the function is available in the global scope
+                    window.postSendMessage = postSendMessage;
+
+                    // Function to check if an agent exists before sending a message
+                    function checkAgentExists(agentCode) {
+                        return fetch(APIServer + '/getOnlineAgentByAgentCode?agentcode=' + agentCode, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': 'Bearer 1aaZ!ARgAQGuQzp00D5D000000.mOv2jmhXkfIsjgywpCIh7.HZpc6vED1LCbc90DTaVDJwdNqbTW5r4uZicv8AFfkOE1ialqnR8UN5.wnAgh090h'
+                            }
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                return !data.error && data.data.IsLogin === 1;
+                            })
+                            .catch(error => {
+                                console.error('Error checking agent:', error);
+                                return false;
+                            });
+                    }
+
+                    // Update the input event for toAgentCode
+                    document.getElementById('toAgentCode').addEventListener('blur', function () {
+                        const agentCode = this.value;
+                        if (agentCode) {
+                            checkAgentExists(agentCode).then(exists => {
+                                if (!exists) {
+                                    // alert('Warning: This agent does not exist or is not logged in. The message may not be delivered.');
+                                }
+                            });
+                        }
+                    });
                 }
             }
         }
-        //-------- Web Socket ----------
-
-
+        //-------------------------------Start Added ---
         function GetSelectedTextValue(currentStatus) {
-            var selectedText = currentStatus.options[currentStatus.selectedIndex].innerHTML;
-            var selectedValue = currentStatus.value;
+            let selectedText = currentStatus.options[currentStatus.selectedIndex].innerHTML;
+            let selectedValue = currentStatus.value;
             alert("Selected Text: " + selectedText + " Value: " + selectedValue);
+
+            const data = {
+                AgentCode: $("#agent").val(),
+                AgentName: currentAgent.AgentName,
+                Queue: currentAgent.Team,
+                AgentStatus: selectedValue,
+                AgentStatusCode: currentAgent.AgentStatusCode,
+                IsLogin: currentAgent.IsLogin
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: ParseServerAPI + "/functions/postOnlineAgentListByTeam",
+                headers: {
+                    "X-Parse-Application-Id": ParseAppId,
+                    "X-Parse-Master-Key": ParseMasterKey
+                },
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+            })
+
         }
+        //-------------------------------End Added --
 
     </script>
-
-    <!------------------------------------>
 
 </head>
 
@@ -837,121 +978,107 @@
     <div class="warper">
 
         <div class="row">
-            <div class="col-12">
-                <table class="table table-sm fs-6">
-                    <tr>
-                        <div class="pt-2 pl-2 pr-2">
-                    <tr>
-                        <td class="text-white">
-                            <span class="text-white" id="connectTime">Information</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-white">
-                            <span class="text-blue badge bg-danger" id="ConnectionStatus">Disconnected</span>
-                            <span id="statusLabel" class="badge bg-dark">N/A</span>
-                        </td>
-                    </tr>
-                    <tr>
-                    </tr>
-            </div>
-            </tr>
-            </table>
-        </div>
-
-        <div class="col-12">
-            <table class="table table-sm fs-6">
-                <tr>
-                    <div class="row">
-                        <div class="col-sm-12 text-center ">
-                            <button id="buttonCall" class="btn btn-primary btn-sm shadow btn-block mt-2" disable
-                                onclick="CallOnescreen(1,'0000')">
-                                Pop-up Chrome
-                            </button>
-
-                            <button id="NotifyBtn" class="btn btn-warning btn-sm btn-block mt-2" onclick="notify()">
-                                Notification
-                            </button>
-
-                            <button id="buttonDisConnect" class="btn btn-danger btn-sm shadow btn-block mt-2"
-                                onclick="logoutFromAPI()">
-                                Disconnect
-                            </button>
-
-                            <div class="input-group  mt-2">
-                                <img src='./assets/Help_And_Support.png' width="30px" height="30px" />
-                                <select id="currentStatus" onchange="GetSelectedTextValue(this)">
-                                    <option value="1">Avalible</option>
+            <div class="col-md-12 text-center pt-2">
+                <div class="col-12">
+                    <table class="table table-sm fs-6">
+                        <tr>
+                            <td class="text-white">
+                                <span class="status text-blue badge bg-danger" id="ConnectionStatus">Disconnected</span>
+                                <span id="statusLabel" class="status badge bg-dark">N/A</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-white">
+                                <!-- <select id="statusDropdown" onchange="updateStatus()" -->
+                                <select id="statusDropdown" onchange="GetSelectedTextValue(this)"
+                                    class="form-select form-select-sm">
+                                    <option value="1">Available</option>
                                     <option value="2">Active</option>
                                     <option value="3">Wrap</option>
                                     <option value="4">Not Ready</option>
                                 </select>
-                            </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-white">
+                                <span class="text-white" id="connectTime">Information</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
 
-                            <!-- 
-                            <div class="input-group-sm mb-1">
-                                <input type="text" class="form-control form-control-sm" id="destAgent"
-                                    placeholder="Agent" />
-                                <input type="text" class="form-control form-control-sm" id="agentMsg"
-                                    placeholder="Type message here.." />
-                                <button id="SendMsgBtn" class="btn btn-warning btn-sm btn-block shadow"
-                                    onclick="checkInput('on')">
-                                    Send
+            <div class="col-12">
+                <table class="table table-sm fs-6">
+                    <tr>
+                        <div class="row">
+                            <div class="col-sm-12 text-center ">
+                                <button id="buttonCall" class="btn btn-primary btn-sm shadow btn-block mt-2" disable
+                                    onclick="CallOnescreen(1,'0000')">
+                                    Pop-up Chrome
                                 </button>
-                            </div> 
--->
-
-                            <div class="input-group  mt-2">
-
-                                <div class="col-xs-1">
-                                    <input type="text" class="form-control form-control-sm" id="destAgent"
-                                        placeholder="Agent" />
-                                </div>
-
-                                <div class="col-xs-3">
-                                    <input type="text" class="form-control form-control-sm" id="agentMsg"
-                                        placeholder="Type message here.." />
-                                </div>
-
-                                <div class="input-group-append">
-                                    <button id="SendMsgBtn" class="btn btn-warning btn-sm btn-block shadow"
-                                        onclick="sendMessage()">
-                                        Send
-                                    </button>
-                                </div>
+                                <button id="buttonDisConnect" class="btn btn-danger btn-sm shadow btn-block mt-2"
+                                    onclick="logoutFromAPI()">
+                                    Disconnect
+                                </button>
+                                <button id="buttonNotification" class="btn btn-primary btn-sm shadow btn-block mt-2"
+                                    onclick="notify()">
+                                    Notification
+                                </button>
                             </div>
+                        </div>
+                    </tr>
+                </table>
+            </div>
 
+            <div id="display">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="input-group mb-1">
+                            <input type="text" class="form-control form-control-sm" id="agent"
+                                placeholder="Enter Agent Code" />
+                            <button id="buttonConnect" class="btn btn-warning btn-sm btn-block shadow"
+                                onclick="checkInput('on')">
+                                Connect
+                            </button>
                         </div>
                     </div>
-                </tr>
-            </table>
-        </div>
+                </div>
+            </div>
 
-        <div id="display">
-            <div class="row">
-                <div class="col-12">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control form-control-sm" id="agent"
-                            placeholder="Enter Agent Code" />
-                        <button id="buttonConnect" class="btn btn-warning btn-sm btn-block shadow"
-                            onclick="checkInput('on')">
-                            Connect
+            <div class="col-md-12 text-center pt-2">
+                <div class="col-md-12 text-center pt-2">
+                    <div class="col-12 mt-3">
+                        <h5>Send Message</h5>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control form-control-sm" id="toAgentCode"
+                                placeholder="To Agent Code" />
+                        </div>
+                        <div class="input-group mb-2">
+                            <textarea class="form-control form-control-sm" id="messageInput"
+                                placeholder="Enter your message"></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-sm shadow btn-block" onclick="postSendMessage()">
+                            Send Message
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-12 text-center pt-2">
+
+            <!-- show message -->
+            <!-- <div id="messageDisplay" class="mt-3">
+            <h5>Received Messages</h5>
+            <div id="messageList" class="border p-2" style="max-height: 200px; overflow-y: auto;">
+            </div>
+        </div> -->
+
 
         </div>
     </div>
-    </div>
 
-    <script>
-        // You can also require other files to run in this process
-        // require('./renderer.js')
-    </script>
+    <script src="https://kit.fontawesome.com/5cb3b5370c.js" crossorigin="anonymous"></script>
+
 </body>
 
 </html>

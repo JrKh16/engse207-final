@@ -68,7 +68,6 @@ export const msToTimeFor4 = (time, limit, agent, style, id, AgentStatusCode) => 
                 </small>
             </td>
         </tr>
-
     );
 }
 

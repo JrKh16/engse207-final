@@ -1,17 +1,16 @@
-const { app, BrowserWindow, screen, Tray, nativeImage, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, screen, Tray, nativeImage, Menu, ipcMain, dialog, Notification } = require('electron');
 const helper = require('./HelperFunctions.js');
 const path = require('path');
 let imgPath;
 const AppNameVersion = app.getName() + " " + app.getVersion();
-const win_width = 520; //320
-const win_height = 310; //210
+const win_width = 1200; //320
+const win_height = 600; //210
 
 
 class WindowManager {
     constructor() {
         //super(props)
         this.state = { isReady: false }
-
         //Iconpaht different in Build
         imgPath = helper.isDev() ? './assets/agent_notification.png' : path.join(__dirname, '../assets/agent_notification.png');
         this.icon = nativeImage.createFromPath(imgPath);
@@ -19,22 +18,21 @@ class WindowManager {
     }
 
     createIPC() {
-
         ipcMain.on('close-me', (evt, arg) => {
             app.quit()
         })
-
         ipcMain.on('hide-me', (evt, arg) => {
             this.hideWindow()
         })
-
         ipcMain.on('show-me', (evt, arg) => {
             this.showWindow()
         })
-
-
-
-        //--------------------------------
+        ipcMain.on('new-message-alert', (event, message) => {
+            this.showNotification('New Message', message);
+        })
+    }
+    showNotification(title, body) {
+        new Notification({ title, body, icon: this.icon }).show();
     }
 
 
@@ -46,7 +44,6 @@ class WindowManager {
         this.createMainWindow();
         this.createIPC();
     }
-
     closeApp() {
         if (app.showExitPrompt) {
             e.preventDefault() // Prevents the window from closing 
@@ -67,9 +64,7 @@ class WindowManager {
     createTray() {
         this.tray = new Tray(this.icon);
         this.tray.getTitle('Agent Notification')
-
         this.tray.on('double-click', this.toggleWindowMain.bind(this));
-
         const contextMenu = Menu.buildFromTemplate([
             { label: AppNameVersion, enabled: false },
             { type: 'separator' },
@@ -77,15 +72,13 @@ class WindowManager {
             { type: 'separator' },
             { label: 'Configuration', click: () => { this.showWindow() } },
             { label: 'Agent Code', click: () => { this.showWindow() } },
-            { label: 'close', click: () => { this.hideWindow() } },
+            { label: 'close', click: () => { this.hideWindow() }},
             { type: 'separator' },
             // { label: 'x86 Chrome', type: 'radio' },
             { label: 'Exit', click: () => { this.exitWindow() } }
         ])
-
         this.tray.setToolTip(AppNameVersion);
         this.tray.setContextMenu(contextMenu)
-
         if (process.platform == "darwin")
             this.tray.setIgnoreDoubleClickEvents(true); //Better UX on MacOS
     }
@@ -101,7 +94,7 @@ class WindowManager {
             // show: true,
             // fullscreenable: false,
             // movable: true,
-            resizable: true,
+              resizable: true,
             // transparent: true,
             // maximazable: false,
             menu: true,
@@ -114,43 +107,36 @@ class WindowManager {
             },
             skipTaskbar: false
         })
-
         this.win.webContents.openDevTools()
-
         this.win.loadFile('index.html'); /*---- */
         this.win.setVisibleOnAllWorkspaces(true);
         this.win.setAlwaysOnTop(true, 'screen');
         this.win.setMenu(null);
         this.showMainWindow(); /*---- */
-
         this.win.setFullScreenable(false);
         this.win.setMaximizable(false);
         this.win.isResizable(false);
-
-        this.win.on('close', function (e) {
-            const choice = require('electron').dialog.showMessageBoxSync(this.win,
-                {
-                    type: 'question',
-                    buttons: ['Yes', 'No'],
-                    title: 'Confirm',
-                    message: 'Are you sure you want to exit ?'
-                });
-            if (choice === 1) {
-                e.preventDefault();
-            }
-        });
+        // this.win.on('close', function (e) {
+        //     const choice = require('electron').dialog.showMessageBoxSync(this.win,
+        //         {
+        //             type: 'question',
+        //             buttons: ['Yes', 'No'],
+        //             title: 'Confirm',
+        //             message: 'Are you sure you want to exit ?'
+        //         });
+        //     if (choice === 1) {
+        //         e.preventDefault();
+        //     }
+        // });
 
     }
-
     hideWindow() {
         this.win.hide()
     }
-
     exitWindow() {
         this.win.close()
         app.exit(0)
     }
-
     showWindow() {
         this.win.show()
     }
@@ -158,22 +144,17 @@ class WindowManager {
     getWindowPosition() {
         const windowBounds = this.win.getBounds()
         const trayBounds = this.tray.getBounds()
-
         let x = 0;
         let y = 0;
-
         console.log("(mac) windowBounds.width=" + windowBounds.width + ", (mac) windowBounds.height=" + windowBounds.height);
         console.log("(mac) trayBounds.width=" + trayBounds.width + ", (mac) trayBounds.height=" + trayBounds.height);
-
         //MacOS
         if (process.platform != "win32") {
             // Center window horizontally below the tray icon
             x = Math.round(trayBounds.x + (trayBounds.width / 2) - (windowBounds.width / 2))
             // Position window 4 pixels vertically below the tray icon
             y = Math.round(trayBounds.y + trayBounds.height + 4)
-
             console.log("(mac) X=" + x + ", (mac) Y=" + y);
-
             return {
                 x: x - 338,
                 y: y
@@ -181,18 +162,15 @@ class WindowManager {
         }
         //On Windows the Task bar is sadly very flexible
         else {
-
             let display = screen.getPrimaryDisplay();
             let width = display.bounds.width;
             let height = display.bounds.height;
             //console.log("(win) X="+width - 231 + ", (win) Y=" + 1);
             console.log("(win) X=" + width + ", (win) Y=" + height);
-
             return {
                 x: width - win_width,
                 y: height - (win_height + 50),
             }
-
         }
     }
 
@@ -202,23 +180,18 @@ class WindowManager {
         this.win.setPosition(position.x, position.y);
         this.win.show()
         this.win.focus()
-
         //This is necessary for the window to appear on windows
         if (process.platform == "win32") {
             this.win.moveTop();
         }
     }
-
     toggleWindowMain() {
-
         if (this.win.isVisible()) {
             this.win.hide()
         } else {
             this.showMainWindow()
         }
     }
-
-
 }
 
 module.exports = WindowManager;

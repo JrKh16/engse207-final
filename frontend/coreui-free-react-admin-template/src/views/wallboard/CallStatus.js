@@ -3,6 +3,7 @@ import { CallStatusContainer } from './style'
 import PhoneCallbackIcon from '@mui/icons-material/PhoneCallback';
 import PhoneMissedIcon from '@mui/icons-material/PhoneMissed';
 import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
+import wbconfig from '../../wbconfig';
 
 const CallStatus = ({ OnlineAgentList, CallAgentSummaries, ServiceCode, CallQueueList }) => {
 

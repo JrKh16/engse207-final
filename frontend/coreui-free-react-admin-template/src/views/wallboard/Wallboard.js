@@ -10,7 +10,6 @@ import CenterBar from "./CenterBar";
 import ReactAudioPlayer from "react-audio-player";
 
 import wallboard_config from "../../wbconfig.js";
-
 const wbconfig = wallboard_config.production;
 
 import { Parse } from "parse";
@@ -177,14 +176,14 @@ export default class Wallboard extends Component {
 
   async get_data() {
 
-    /*
-        let hosturl = "https://192.168.56.10:4000/api";
-        let wsurl = "wss://192.168.56.10:4000";
-        let masterKey = "wallboardapi";
-        let clientKey = "wallboardapi";
-        let javascriptKey = "wallboardapi";
-        let appId = "wallboardapi";
-    */
+    
+        // let hosturl = "https://10.21.43.203:8600/api";
+        // let wsurl = "wss://10.21.43.203:8600";
+        // let masterKey = "wallboardapi";
+        // let clientKey = "wallboardapi";
+        // let javascriptKey = "wallboardapi";
+        // let appId = "wallboardapi";
+    
     console.log("hosturl: " + wbconfig.hosturl);
     console.log("wsurl: " + wbconfig.wsurl);
 
@@ -360,20 +359,7 @@ export default class Wallboard extends Component {
     });
 
 
-
-
   } //-- End Function get_data()
-
-
-  
-
-
-
-
-
-
-
-
 
   componentDidMount() {
     this.setState({
