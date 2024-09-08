@@ -6,8 +6,10 @@ var fs = require('fs');
 // You might need this. Use 'true' or 'false' depending your connection.
 var options = { allowInsecureHTTP: true };
 
-var apiport = 8005;
-var dashboard_port = 8006;
+var apiport = 8605;
+var dashboard_port = 8606;
+// var apiport = 4000;
+// var dashboard_port = 4001;
 
 var cert_options = {
   key: fs.readFileSync('server.key'),
@@ -17,6 +19,7 @@ var cert_options = {
 var trustProxy = true;
 var dashboard = new ParseDashboard({
   "apps": [{
+    // ip local after wallboardapi
     "serverURL": 'https://10.21.43.203:' + apiport + '/api',
     "appId": 'wallboardapi',
     "masterKey": 'wallboardapi',
@@ -40,14 +43,9 @@ var dashApp = express();
 
 dashApp.use(cors());
 dashApp.use(cors({ origin: '*' }))
-
 // make the Parse Dashboard available at /dashboard
 dashApp.use('/', dashboard);
-
 var httpServerDash = require('https').createServer(cert_options, dashApp);
-
 httpServerDash.listen(dashboard_port, function () {
   console.log('Parse-dashboard server running on port ' + dashboard_port + '.');
 });
-
-
