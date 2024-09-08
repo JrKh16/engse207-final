@@ -34,6 +34,7 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
 
                                                 return msToTime(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode)
                                             }
+
                                         }
                                         )
                                         :
@@ -124,17 +125,15 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
                                 {
                                     ServiceCode === 'ALL' ?
                                         Object.keys(OnlineAgentList).map((key) => {
-
                                             const agent = OnlineAgentList[key]
-
                                             //console.log("agent.AgentTime: "+agent.AgentTime);
                                             //console.log("agent.AgentName: "+agent.AgentName);
                                             //console.log("agent.AgentCode: "+agent.AgentCode);
                                             //console.log("agent.AgentStatusCode: "+agent.AgentStatusCode);
-
                                             if (parseInt(agent.AgentStatus) === 4) {
                                                 //return msToTimeFor4(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode, agent.AgentStatusCode)
                                                 return msToTimeFor4(agent.AgentTime, 'false', agent.AgentName, '', agent.AgentCode, parseInt(agent.AgentStatusCode))
+
                                             }
                                         }
                                         )
@@ -150,7 +149,6 @@ const Agentonline = ({ OnlineAgentList, ServiceCode }) => {
                             </tbody>
                         </table>
                     </Col>
-
                 </Row>
             </Container>
         </div>
