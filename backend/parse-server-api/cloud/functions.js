@@ -1,38 +1,27 @@
-
 Parse.Cloud.define('hello', req => {
     req.log.info(req);
-    return 'Hi from Parse Server';
+    return 'Hi from Super USER';
 });
 
 
-Parse.Cloud.define("OnlineAgentByAgentCode", async request => {
-
-    let AgentCode = request.params.AgentCode;
-
+Parse.Cloud.define("OnlineAgentByAgentId", async request => {
+    let AgentID = request.params.AgentID;
     let returnCode = 0;
     //------------------
-
     const query = new Parse.Query("OnlineAgentLists"); // select * from OnlineAgentLists
-
-    query.equalTo("AgentCode", AgentCode); // where AgentCode = 'AgentCode'
-
+    query.equalTo("AgentID", AgentID); // where AgentID = 'AgentID'
     let results;
-
     try {
         results = await query.first();
-
         if (results == undefined) {
             returnCode = '9';
         } else {
             returnCode = results.get("AgentStatus");
         }
-
         return returnCode;
-
     } catch (error) {
         throw error.message;
     }
-
 });
 
 
@@ -98,25 +87,17 @@ Parse.Cloud.define("postOnlineAgentListByTeam", async request => {
         }, function (error) {
             response.error(error);
         });
-
         return returnCode;
-
     }
     else {  // IsLogin == 1
-
         const query = new Parse.Query("OnlineAgentLists");
         query.equalTo("AgentCode", AgentCode);
-
         let results;
-
         try {
             results = await query.first();
-
             if (results == undefined) { // Record not found
                 // Insert Data
-
                 let onlineagentlist = new Parse.Object("OnlineAgentLists");
-
                 if (AgentCode != undefined) onlineagentlist.set("AgentCode", AgentCode);
                 else returnCode = 11;
                 if (AgentName != undefined) onlineagentlist.set("AgentName", AgentName);
@@ -131,14 +112,10 @@ Parse.Cloud.define("postOnlineAgentListByTeam", async request => {
                 else returnCode = 16;
                 if (startedAt != undefined) onlineagentlist.set("startedAt", startedAt);
                 else returnCode = 17;
-
                 if (returnCode == 0) onlineagentlist.save(); //Insert data
-
-
             }
             else { //  Found record
                 // Update Data
-
                 if (AgentName != undefined) results.set("AgentName", AgentName);
                 else returnCode = 1;
                 if (Queue != undefined) results.set("Queue", QueueText);
@@ -151,22 +128,15 @@ Parse.Cloud.define("postOnlineAgentListByTeam", async request => {
                 else returnCode = 5;
                 if (startedAt != undefined) results.set("startedAt", startedAt);
                 else returnCode = 6;
-
                 //if (returnCode == 0) results.save();
                 if (returnCode == 0) {
                     results.save();
                     returnCode = 9;
                 }
-
             }
-
             return returnCode;
-
         } catch (error) {
             throw error.message;
         }
-
     }
-
-
 });
