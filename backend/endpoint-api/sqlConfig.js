@@ -2,7 +2,8 @@ var dbconfig = {
     development: {
         // อย่าลืมเปลี่ยน ip ดูให้ดีนะจะ
         // server: '10.21.43.203',
-        server: 'host.docker.internal',
+        server: '127.0.0.1',
+        // server: 'host.docker.internal',
         // server: '192.168.56.107',
         database:'team6_web_labDB',
         user:'sa',
@@ -14,8 +15,8 @@ var dbconfig = {
             enableArithAbort: true,
             trustServerCertificate: true,
             trustedconnection:  false,
-            instancename:  '172.24.229.163'  // SQL Server instance name
-            // instancename:  '192.168.56.107'  // SQL Server instance name
+            // instancename:  '172.24.229.163'  // SQL Server instance name
+             instancename:  '127.0.0.1'  // SQL Server instance name
         }
     },
     production: {
