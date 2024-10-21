@@ -10,14 +10,14 @@ const OnlineAgent = require('./repository/OnlineAgent');
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "1";
 
-const apiport = 8000
+const apiport = 8600
 
 var url = require('url');
 
 //---------------- Websocket Part1 Start -----------------------
 
 var webSocketServer = new (require('ws')).Server({
-    port: (process.env.PORT || 8001)
+    port: (process.env.PORT || 8601)
 }),
     clientWebSockets = {} // userID: webSocket
 CLIENTS = [];
@@ -165,7 +165,7 @@ const init = async () => {
 
     server.route({
         method: 'GET',
-        path: '/engse207/api/v1/',
+        path: '/',
         config: {
             cors: {
                 origin: [
@@ -189,7 +189,7 @@ const init = async () => {
 
     server.route({
         method: 'GET',
-        path: '/engse207/api/v1/getOnlineAgentByAgentCode',
+        path: '/api/v1/getOnlineAgentByAgentCode',
         config: {
             cors: {
                 origin: [
@@ -215,13 +215,13 @@ const init = async () => {
                     if (responsedata.statusCode == 500)
                         return h.response("Something went wrong. Please try again later.").code(500);
                     else
-                        if (responsedata.statusCode == 200)
-                            return responsedata;
-                        else
-                            if (responsedata.statusCode == 404)
-                                return h.response(responsedata).code(404);
-                            else
-                                return h.response("Something went wrong. Please try again later.").code(500);
+                    if (responsedata.statusCode == 200)
+                        return responsedata;
+                     else
+                    if (responsedata.statusCode == 404)
+                        return h.response(responsedata).code(404);
+                    else
+                        return h.response("Something went wrong. Please try again later.").code(500);
 
                 }
             } catch (err) {
@@ -233,7 +233,7 @@ const init = async () => {
 
     server.route({
         method: 'POST',
-        path: '/engse207/api/v1/postOnlineAgentStatus',
+        path: '/api/v1/postOnlineAgentStatus',
         config: {
             cors: {
                 origin: [
@@ -292,93 +292,13 @@ const init = async () => {
                     if (responsedata.statusCode == 200)
                         return responsedata;
                     else
-                        if (responsedata.statusCode == 404)
-                            return h.response(responsedata).code(404);
-                        else
-                            return h.response("Something went wrong. Please try again later.").code(500);
-
-                }
-
-            } catch (err) {
-                console.dir(err)
-            }
-
-        }
-
-    });
-
-    server.route({
-        method: 'POST',
-        path: '/engse207/api/v1/postOnlineAgentStatusByTeam',
-        config: {
-            cors: {
-                origin: [
-                    '*'
-                ],
-                headers: ["Access-Control-Allow-Headers", "Access-Control-Allow-Origin", "Accept", "Authorization", "Content-Type", "If-None-Match", "Accept-language"],
-                additionalHeaders: ["Access-Control-Allow-Headers: Origin, Content-Type, x-ms-request-id , Authorization"],
-                credentials: true
-            },
-            payload: {
-                parse: true,
-                allow: ['application/json', 'multipart/form-data'],
-                multipart: true  // <== this is important in hapi 19
-            }
-        },
-        handler: async (request, h) => {
-            let param = request.payload;
-
-            const AgentCode = param.AgentCode;
-            const AgentName = param.AgentName;
-            const Team = param.Team;
-            const IsLogin = param.IsLogin;
-            const AgentStatus = param.AgentStatus;
-            var d = new Date();
-
-            try {
-
-                if (param.AgentCode == null)
-                    return h.response("Please provide agentcode.").code(400);
-                else {
-
-                    const responsedata = await OnlineAgent.OnlineAgentRepo.postOnlineAgentStatusByTeam(AgentCode, AgentName, Team, IsLogin, AgentStatus);
-
-                    //---------------- Websocket Part2 Start -----------------------
-                    if (!responsedata.error) {
-                        if (clientWebSockets[AgentCode]) {
-
-                            clientWebSockets[AgentCode].send(JSON.stringify({
-                                MessageType: '4',
-                                AgentCode: AgentCode,
-                                AgentName: AgentName,
-                                IsLogin: IsLogin,
-                                AgentStatus: AgentStatus,
-                                DateTime: d.toLocaleString('en-US'),
-                            }));
-
-                            return ({
-                                error: false,
-                                message: "Agent status has been set.",
-                            });
-
-                        }
-                    }
-                    //---------------- Websocket Part2 End -----------------------
-
-                    if (responsedata.statusCode == 200)
-                        return responsedata;
+                    if (responsedata.statusCode == 404)
+                        return h.response(responsedata).code(404);
                     else
-                        if (responsedata.statusCode == 404)
-                            return h.response(responsedata).code(404);
-                        else
-                            return h.response({
-                                error: true,
-                                statusCode: 500,
-                                errMessage: 'An internal server error occurred',
-                            }).code(500);
+                        return h.response("Something went wrong. Please try again later.").code(500);
 
                 }
-
+         
             } catch (err) {
                 console.dir(err)
             }
@@ -389,7 +309,7 @@ const init = async () => {
 
     server.route({
         method: 'POST',
-        path: '/engse207/api/v1/postSendMessage',
+        path: '/api/v1/postSendMessage',
         config: {
             cors: {
                 origin: [
@@ -455,7 +375,7 @@ const init = async () => {
 
     server.route({
         method: 'POST',
-        path: '/engse207/api/v1/deleteOnlineAgent',
+        path: '/api/v1/deleteOnlineAgent',
         config: {
             cors: {
                 origin: [
@@ -502,3 +422,5 @@ process.on('unhandledRejection', (err) => {
 });
 
 init();
+
+
